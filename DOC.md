@@ -145,6 +145,7 @@ export function generateAsset(ctx: VectorContext) {
 
 - `setFill(color)` / `setStroke(color, thickness)`
 - `setShadow(color, blur, offsetX?, offsetY?)` / `clearShadow()`
+- `setCanvasSize(width, height?)` — define resolução real mantendo coordenadas lógicas 0-100
 - `clear(color?)` / `setBackground(color)`
 
 ### Utilitários procedural
@@ -197,8 +198,10 @@ O estado `selectedPath` e `code` são gerenciados no `App`.
 
 - Todos os scripts de asset devem exportar `generateAsset(ctx: VectorContext)`.
 - Cores são strings hexadecimais (`#RRGGBB`).
-- Canvas interno é 100×100. O preview usa zoom via CSS (`width: 100 * zoom`).
-- Export PNG usa o tamanho real do canvas (100×100).
+- O canvas usa coordenadas lógicas de 0 a 100. O tamanho padrão é 100×100 pixels.
+- Use `ctx.setCanvasSize(n)` para render em alta resolução (ex: 512×512) sem perder a proporção das coordenadas.
+- O preview usa zoom via CSS (`width: realWidth * zoom`).
+- Export PNG usa o tamanho real do canvas.
 
 ---
 

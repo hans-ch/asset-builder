@@ -1,16 +1,13 @@
-import { useRef } from 'react';
 import { useVectorRenderer } from '../hooks/useVectorRenderer';
 
 interface Props {
   generatedCode: string;
-  canvasSize: number;
   zoom: number;
   onZoomChange: (zoom: number) => void;
 }
 
-export function PreviewPanel({ generatedCode, canvasSize, zoom, onZoomChange }: Props) {
-  const { canvasRef, error } = useVectorRenderer(generatedCode, canvasSize);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+export function PreviewPanel({ generatedCode, zoom, onZoomChange }: Props) {
+  const { canvasRef, error, canvasSize } = useVectorRenderer(generatedCode);
 
   function downloadPNG() {
     const canvas = canvasRef.current;
@@ -18,7 +15,7 @@ export function PreviewPanel({ generatedCode, canvasSize, zoom, onZoomChange }: 
 
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
-    link.download = `asset-${canvasSize}x${canvasSize}.png`;
+    link.download = `asset-${canvas.width}x${canvas.height}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -32,9 +29,9 @@ export function PreviewPanel({ generatedCode, canvasSize, zoom, onZoomChange }: 
           <label className="text-gray-500 font-normal normal-case">Zoom</label>
           <input
             type="range"
-            min={1}
-            max={10}
-            step={0.5}
+            min={0.25}
+            max={5}
+            step={0.25}
             value={zoom}
             onChange={(e) => onZoomChange(parseFloat(e.target.value))}
             className="w-24 accent-blue-500"
@@ -49,10 +46,7 @@ export function PreviewPanel({ generatedCode, canvasSize, zoom, onZoomChange }: 
         </div>
       </div>
 
-      <div
-        ref={wrapperRef}
-        className="flex-1 relative bg-gray-900 overflow-auto flex items-center justify-center"
-      >
+      <div className="flex-1 relative bg-gray-900 overflow-auto flex items-center justify-center">
         {/* Grade de fundo para destacar transparência */}
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
@@ -68,9 +62,9 @@ export function PreviewPanel({ generatedCode, canvasSize, zoom, onZoomChange }: 
           ref={canvasRef}
           className="relative z-10 bg-transparent shadow-2xl"
           style={{
-            width: canvasSize * zoom,
-            height: canvasSize * zoom,
-            imageRendering: zoom >= 4 ? 'pixelated' : 'auto',
+            width: Math.max(canvasSize.width * zoom, 1),
+            height: Math.max(canvasSize.height * zoom, 1),
+            imageRendering: zoom >= 2 ? 'pixelated' : 'auto',
           }}
         />
       </div>

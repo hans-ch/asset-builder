@@ -3,45 +3,58 @@ import { pick, random, randomColor, randomInt, toRadians } from './utils.js';
 
 export class VectorEngine implements VectorContext {
   private ctx: CanvasRenderingContext2D;
+  private scaleFactor: number;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
+    this.scaleFactor = 1;
+  }
+
+  private s(value: number): number {
+    return value * this.scaleFactor;
+  }
+
+  setCanvasSize(width: number, height?: number) {
+    const h = height ?? width;
+    this.scaleFactor = width / 100;
+    this.ctx.canvas.width = width;
+    this.ctx.canvas.height = h;
   }
 
   // ---- Formas básicas ----
 
   drawRect(x: number, y: number, w: number, h: number, color: Color) {
     this.ctx.fillStyle = color;
-    this.ctx.fillRect(x, y, w, h);
+    this.ctx.fillRect(this.s(x), this.s(y), this.s(w), this.s(h));
   }
 
   drawRoundedRect(x: number, y: number, w: number, h: number, radius: number, color: Color) {
-    const r = Math.min(radius, w / 2, h / 2);
+    const sr = Math.min(this.s(radius), this.s(w) / 2, this.s(h) / 2);
     this.ctx.beginPath();
-    this.ctx.roundRect(x, y, w, h, r);
+    this.ctx.roundRect(this.s(x), this.s(y), this.s(w), this.s(h), sr);
     this.ctx.fillStyle = color;
     this.ctx.fill();
   }
 
   drawCircle(cx: number, cy: number, r: number, color: Color) {
     this.ctx.beginPath();
-    this.ctx.arc(cx, cy, Math.max(0, r), 0, 2 * Math.PI);
+    this.ctx.arc(this.s(cx), this.s(cy), Math.max(0, this.s(r)), 0, 2 * Math.PI);
     this.ctx.fillStyle = color;
     this.ctx.fill();
   }
 
   drawEllipse(cx: number, cy: number, rx: number, ry: number, color: Color) {
     this.ctx.beginPath();
-    this.ctx.ellipse(cx, cy, Math.max(0, rx), Math.max(0, ry), 0, 0, 2 * Math.PI);
+    this.ctx.ellipse(this.s(cx), this.s(cy), Math.max(0, this.s(rx)), Math.max(0, this.s(ry)), 0, 0, 2 * Math.PI);
     this.ctx.fillStyle = color;
     this.ctx.fill();
   }
 
   drawLine(x1: number, y1: number, x2: number, y2: number, thickness: number, color: Color) {
     this.ctx.beginPath();
-    this.ctx.moveTo(x1, y1);
-    this.ctx.lineTo(x2, y2);
-    this.ctx.lineWidth = Math.max(0.1, thickness);
+    this.ctx.moveTo(this.s(x1), this.s(y1));
+    this.ctx.lineTo(this.s(x2), this.s(y2));
+    this.ctx.lineWidth = Math.max(0.1, this.s(thickness));
     this.ctx.strokeStyle = color;
     this.ctx.stroke();
   }
@@ -59,9 +72,16 @@ export class VectorEngine implements VectorContext {
     color: Color
   ) {
     this.ctx.beginPath();
-    this.ctx.moveTo(x1, y1);
-    this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
-    this.ctx.lineWidth = Math.max(0.1, thickness);
+    this.ctx.moveTo(this.s(x1), this.s(y1));
+    this.ctx.bezierCurveTo(
+      this.s(cp1x),
+      this.s(cp1y),
+      this.s(cp2x),
+      this.s(cp2y),
+      this.s(x2),
+      this.s(y2)
+    );
+    this.ctx.lineWidth = Math.max(0.1, this.s(thickness));
     this.ctx.strokeStyle = color;
     this.ctx.stroke();
   }
@@ -77,9 +97,9 @@ export class VectorEngine implements VectorContext {
     color: Color
   ) {
     this.ctx.beginPath();
-    this.ctx.moveTo(x1, y1);
-    this.ctx.quadraticCurveTo(cpx, cpy, x2, y2);
-    this.ctx.lineWidth = Math.max(0.1, thickness);
+    this.ctx.moveTo(this.s(x1), this.s(y1));
+    this.ctx.quadraticCurveTo(this.s(cpx), this.s(cpy), this.s(x2), this.s(y2));
+    this.ctx.lineWidth = Math.max(0.1, this.s(thickness));
     this.ctx.strokeStyle = color;
     this.ctx.stroke();
   }
@@ -87,9 +107,9 @@ export class VectorEngine implements VectorContext {
   drawPolygon(points: [number, number][], color: Color) {
     if (points.length < 3) return;
     this.ctx.beginPath();
-    this.ctx.moveTo(points[0][0], points[0][1]);
+    this.ctx.moveTo(this.s(points[0][0]), this.s(points[0][1]));
     for (let i = 1; i < points.length; i++) {
-      this.ctx.lineTo(points[i][0], points[i][1]);
+      this.ctx.lineTo(this.s(points[i][0]), this.s(points[i][1]));
     }
     this.ctx.closePath();
     this.ctx.fillStyle = color;
@@ -110,8 +130,8 @@ export class VectorEngine implements VectorContext {
 
   drawArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: Color) {
     this.ctx.beginPath();
-    this.ctx.moveTo(cx, cy);
-    this.ctx.arc(cx, cy, Math.max(0, r), toRadians(startAngle), toRadians(endAngle));
+    this.ctx.moveTo(this.s(cx), this.s(cy));
+    this.ctx.arc(this.s(cx), this.s(cy), Math.max(0, this.s(r)), toRadians(startAngle), toRadians(endAngle));
     this.ctx.closePath();
     this.ctx.fillStyle = color;
     this.ctx.fill();
@@ -137,7 +157,7 @@ export class VectorEngine implements VectorContext {
   }
 
   translate(x: number, y: number) {
-    this.ctx.translate(x, y);
+    this.ctx.translate(this.s(x), this.s(y));
   }
 
   rotate(angleDegrees: number) {
@@ -156,14 +176,14 @@ export class VectorEngine implements VectorContext {
 
   setStroke(color: Color, thickness: number) {
     this.ctx.strokeStyle = color;
-    this.ctx.lineWidth = Math.max(0.1, thickness);
+    this.ctx.lineWidth = Math.max(0.1, this.s(thickness));
   }
 
   setShadow(color: Color, blur: number, offsetX = 0, offsetY = 0) {
     this.ctx.shadowColor = color;
-    this.ctx.shadowBlur = blur;
-    this.ctx.shadowOffsetX = offsetX;
-    this.ctx.shadowOffsetY = offsetY;
+    this.ctx.shadowBlur = this.s(blur);
+    this.ctx.shadowOffsetX = this.s(offsetX);
+    this.ctx.shadowOffsetY = this.s(offsetY);
   }
 
   clearShadow() {

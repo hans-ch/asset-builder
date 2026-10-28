@@ -1,15 +1,17 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useRef, useState } from 'react';
 import { transform } from 'sucrase';
-import { VectorEngine } from '../engine/VectorEngine';
+import { VectorEngine } from '../engine/VectorEngine.js';
 
 export interface RenderResult {
   error: string | null;
   canvas: HTMLCanvasElement | null;
 }
 
-export function useVectorRenderer(generatedCode: string, canvasSize: number) {
+export function useVectorRenderer(generatedCode: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 100, height: 100 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,13 +23,14 @@ export function useVectorRenderer(generatedCode: string, canvasSize: number) {
       return;
     }
 
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
-
+    // Reset para tamanho padrão
+    canvas.width = 100;
+    canvas.height = 100;
     setError(null);
     ctx2d.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!generatedCode.trim()) {
+      setCanvasSize({ width: 100, height: 100 });
       return;
     }
 
@@ -45,13 +48,15 @@ export function useVectorRenderer(generatedCode: string, canvasSize: number) {
 
       const engine = new VectorEngine(ctx2d);
       builder(engine);
+
+      setCanvasSize({ width: canvas.width, height: canvas.height });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(message);
       console.error('Erro na execução do script:', err);
+      setCanvasSize({ width: 100, height: 100 });
     }
-  }, [generatedCode, canvasSize]);
+  }, [generatedCode]);
 
-  return { canvasRef, error };
+  return { canvasRef, error, canvasSize };
 }

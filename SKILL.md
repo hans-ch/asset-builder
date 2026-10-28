@@ -29,6 +29,7 @@ interface VectorContext {
   setStroke(color: string, thickness: number): void;
   setShadow(color: string, blur: number, offsetX?: number, offsetY?: number): void;
   clearShadow(): void;
+  setCanvasSize(width: number, height?: number): void;
   clear(color?: string): void;
   setBackground(color: string): void;
   random(min?: number, max?: number): number;
@@ -40,7 +41,8 @@ interface VectorContext {
 
 ## Regras de Geração e Salvamento
 
-1. O canvas possui tamanho padrão de 100x100 pixels. Centralize o desenho.
+1. O canvas usa coordenadas lógicas de 0 a 100 (tamanho padrão 100x100 pixels). Centralize o desenho.
+2. Se o usuário pedir um tamanho específico (ex: "512x512"), chame `ctx.setCanvasSize(largura, altura)` no início da função. As coordenadas de desenho continuam de 0 a 100, mas o render final terá a resolução solicitada.
 2. Use `startGroup`/`endGroup` ou `withGroup` para separar partes lógicas.
 3. Cada arquivo `.ts` deve exportar a função `export function generateAsset(ctx: VectorContext)`. Não chame a função no arquivo.
 4. Use cores em formato hexadecimal (`#RRGGBB`).
@@ -66,6 +68,9 @@ interface VectorContext {
 // Gerado em: 2026-10-23
 
 export function generateAsset(ctx: VectorContext) {
+  // Opcional: define resolução maior para bordas nítidas
+  ctx.setCanvasSize(512);
+
   ctx.startGroup('lamina');
   ctx.drawPolygon([[45, 90], [55, 90], [55, 20], [50, 10], [45, 20]], '#ef4444');
   ctx.endGroup();

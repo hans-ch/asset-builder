@@ -61,6 +61,7 @@ interface VectorContext {
   clearShadow(): void;
 
   // Canvas
+  setCanvasSize(width: number, height?: number): void;
   clear(color?: Color): void;
   setBackground(color: Color): void;
 

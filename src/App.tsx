@@ -96,7 +96,7 @@ export default function App() {
           />
         </div>
         <div className="flex-1 min-h-0">
-          <PreviewPanel generatedCode={code} canvasSize={100} zoom={zoom} onZoomChange={setZoom} />
+          <PreviewPanel generatedCode={code} zoom={zoom} onZoomChange={setZoom} />
         </div>
       </main>
     </div>

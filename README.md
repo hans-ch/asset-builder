@@ -64,6 +64,9 @@ Cada script deve exportar:
 
 ```typescript
 export function generateAsset(ctx: VectorContext) {
+  // Define resolução maior para bordas nítidas (opcional)
+  ctx.setCanvasSize(512);
+
   ctx.setBackground('#1f2937');
   ctx.drawCircle(50, 50, 30, '#3b82f6');
 
