@@ -1,8 +1,29 @@
+import type { StyleInfo } from '../styles/types.js';
+
 export type Color = string;
 
 export interface Point {
   x: number;
   y: number;
+}
+
+export type DitherPattern = 'bayer4' | 'checker' | 'dots';
+
+export interface PixelMapOptions {
+  /** Deslocamento X do mapa na grade (por padrão, centralizado). */
+  x?: number;
+  /** Deslocamento Y do mapa na grade (por padrão, centralizado). */
+  y?: number;
+  /** Alinhamento do mapa na grade (padrão: 'center'). */
+  align?: 'left' | 'center' | 'right';
+  /** Remove linhas/colunas vazias nas bordas do mapa antes de desenhar. */
+  trim?: boolean;
+  /** Desenha apenas a metade esquerda do mapa e espelha na grade. */
+  mirror?: 'x';
+  /** Espelha o mapa horizontalmente. */
+  flipX?: boolean;
+  /** Caracteres adicionais considerados transparentes. */
+  transparent?: string[];
 }
 
 export interface VectorContext {
@@ -42,7 +63,6 @@ export interface VectorContext {
   startGroup(id: string): void;
   endGroup(): void;
   withGroup<T>(id: string, fn: () => T): T;
-
   translate(x: number, y: number): void;
   rotate(angleDegrees: number): void;
   scale(x: number, y?: number): void;
@@ -53,14 +73,48 @@ export interface VectorContext {
   setShadow(color: Color, blur: number, offsetX?: number, offsetY?: number): void;
   clearShadow(): void;
 
-  // Canvas
+  // Canvas e utilitários
   setCanvasSize(width: number, height?: number): void;
   clear(color?: Color): void;
   setBackground(color: Color): void;
-
-  // Utilitários procedural
   random(min?: number, max?: number): number;
   randomInt(min?: number, max?: number): number;
-  randomColor(): Color;
+  randomColor(): string;
   pick<T>(items: T[]): T;
+
+  // Estilo (catálogo)
+  setStyle(styleId: string): void;
+  getStyle(): StyleInfo | null;
+  isPixelMode(): boolean;
+
+  // Primitivas de grade (modo pixel)
+  drawPixel(x: number, y: number, color: Color): void;
+  drawPixelRect(x: number, y: number, w: number, h: number, color: Color): void;
+  drawPixelLine(x1: number, y1: number, x2: number, y2: number, color: Color): void;
+  drawPixelCircle(cx: number, cy: number, r: number, color: Color): void;
+  drawPixelEllipse(cx: number, cy: number, rx: number, ry: number, color: Color): void;
+  drawPixelPolygon(points: [number, number][], color: Color): void;
+  drawPixelMap(
+    rows: string[],
+    palette: Record<string, Color>,
+    options?: PixelMapOptions
+  ): void;
+
+  // Utilitários de grade (modo pixel)
+  outlinePixels(color: Color, options?: { diagonal?: boolean }): void;
+  separatePixels(ink: Color, options?: { includeDiagonal?: boolean }): void;
+  shadePixels(from: Color, to: Color): void;
+  ditherPixels(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    colorA: Color,
+    colorB: Color,
+    pattern?: DitherPattern
+  ): void;
+  mirrorPixels(axis: 'x' | 'y'): void;
+
+  // Paleta
+  setPalette(colors: Color[]): void;
 }

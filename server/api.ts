@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, promises as fs, readdirSync, statSync } from 'fs
 import path from 'path';
 import { transform } from 'sucrase';
 import { VectorEngine } from '../src/engine/VectorEngine.js';
+import { runAsset } from '../src/engine/runner.js';
 
 const ASSET_DIR = path.resolve(process.cwd(), 'asset_gen');
 
@@ -29,6 +30,8 @@ function listAssetFolders(): AssetFolder[] {
   const folders: AssetFolder[] = [];
 
   for (const entry of entries) {
+    // Pastas com prefixo "_" sao areas de trabalho (ex.: _archive) e nao aparecem no explorer.
+    if (entry.startsWith('_')) continue;
     const fullPath = path.join(ASSET_DIR, entry);
     if (statSync(fullPath).isDirectory()) {
       const files = readdirSync(fullPath)
@@ -151,7 +154,7 @@ export function createAssetsRouter(): Router {
       const canvas = createCanvas(size, size);
       const ctx = canvas.getContext('2d');
       const engine = new VectorEngine(ctx as unknown as CanvasRenderingContext2D);
-      builder(engine);
+      runAsset(engine, builder);
 
       const buffer = await canvas.encode('png');
       await fs.writeFile(previewPath, buffer);

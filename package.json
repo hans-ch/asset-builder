@@ -8,7 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "render": "tsx scripts/render.ts"
+    "render": "tsx scripts/render.ts",
+    "styles:check": "tsx scripts/check-styles.ts",
+    "skeleton": "tsx scripts/skeleton.ts",
+    "doctor": "tsx scripts/doctor.ts",
+    "pixelize": "tsx scripts/pixelize.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

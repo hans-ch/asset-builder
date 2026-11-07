@@ -1,7 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { transform } from 'sucrase';
 import { VectorEngine } from '../engine/VectorEngine.js';
+import { runAsset } from '../engine/runner.js';
+import { detectStyle, type DetectedStyle } from '../styles/detect.js';
 
 export interface RenderResult {
   error: string | null;
@@ -12,6 +14,8 @@ export function useVectorRenderer(generatedCode: string) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 100, height: 100 });
+
+  const detected: DetectedStyle = useMemo(() => detectStyle(generatedCode), [generatedCode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -47,7 +51,7 @@ export function useVectorRenderer(generatedCode: string) {
       }
 
       const engine = new VectorEngine(ctx2d);
-      builder(engine);
+      runAsset(engine, builder);
 
       setCanvasSize({ width: canvas.width, height: canvas.height });
     } catch (err) {
@@ -58,5 +62,11 @@ export function useVectorRenderer(generatedCode: string) {
     }
   }, [generatedCode]);
 
-  return { canvasRef, error, canvasSize };
+  return {
+    canvasRef,
+    error,
+    canvasSize,
+    style: detected.info,
+    detected,
+  };
 }

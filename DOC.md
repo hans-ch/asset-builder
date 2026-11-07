@@ -1,91 +1,129 @@
-# Asset Builder — Documentação de Contexto
+# Asset Builder — Documentação Completa
 
-## Visão geral
+## 1. Visão geral
 
-Asset Builder é uma ferramenta híbrida para geração procedural de assets 2D.
+**Asset Builder** é uma ferramenta híbrida para geração procedural de assets 2D.
 
-- **Geração**: feita via OpenCode CLI usando `SKILL.md`. O agente CLI cria scripts TypeScript e os salva em `asset_gen/<grupo>/`.
-- **Visualização/edição**: interface web (React + Vite) com explorer de arquivos, editor Monaco e preview de canvas.
+- **Geração**: feita via **OpenCode CLI** usando `SKILL.md`. O agente CLI cria scripts TypeScript e os salva em `asset_gen/<grupo>/`.
+- **Visualização/edição**: interface web (React + Vite) com explorer de arquivos, editor Monaco e preview de canvas em tempo real.
+- A interface web **não possui input de prompt nem integração com API de IA**.
 
-A interface web **não** possui input de prompt nem integração com API de IA.
-
----
-
-## Tecnologias
-
-- **Vite 8** + **React 19** + **TypeScript 6**
-- **Tailwind CSS v4** com plugin do Vite (`@tailwindcss/vite`)
-- **Monaco Editor** (`@monaco-editor/react`) para edição de TypeScript
-- **Sucrase** para compilar TypeScript em tempo de execução no browser e no Node
-- **@napi-rs/canvas** para renderizar previews no Node
-- **Express** como middleware dentro do servidor de dev do Vite
+O diferencial é que os scripts são desenhados em um sistema vetorial de coordenadas lógicas (0–100) e podem ser renderizados em qualquer resolução real via `ctx.setCanvasSize(n)`.
 
 ---
 
-## Estrutura de pastas
+## 2. Tecnologias
+
+| Camada | Tecnologia |
+|--------|------------|
+| Build / dev server | Vite 8 |
+| UI | React 19 + TypeScript 6 |
+| Estilos | Tailwind CSS v4 (`@tailwindcss/vite`) |
+| Editor de código | Monaco Editor (`@monaco-editor/react`) |
+| Compilação TS em runtime | Sucrase |
+| Renderização no Node | `@napi-rs/canvas` |
+| Backend de arquivos | Express como middleware do Vite |
+| Scripts CLI | `tsx` |
+
+---
+
+## 3. Estrutura de pastas
 
 ```
 asset-builder/
-├── asset_gen/                    # Assets gerados pelo CLI (não versionar)
+├── asset_gen/                         # Assets gerados pelo CLI (não versionar)
 │   └── <grupo_01>/
 │       ├── asset_01.ts
 │       ├── asset_02.ts
 │       └── preview.png
 ├── scripts/
-│   └── render.ts                 # CLI: renderiza PNG no Node
+│   ├── render.ts                      # CLI para renderizar previews PNG no Node
+│   └── check-styles.ts                # Valida o catálogo de estilos
 ├── server/
-│   └── api.ts                    # Endpoints REST de arquivos
+│   └── api.ts                         # Endpoints REST de arquivos + render
 ├── src/
 │   ├── components/
-│   │   ├── AssetExplorer.tsx     # Explorer de pastas/scripts
-│   │   ├── EditorPanel.tsx       # Monaco Editor + salvar
-│   │   ├── PreviewPanel.tsx      # Canvas + zoom + export PNG
-│   │   └── ErrorConsole.tsx      # Exibe erros
+│   │   ├── AssetExplorer.tsx          # Explorer de pastas/scripts
+│   │   ├── EditorPanel.tsx            # Monaco Editor + salvar
+│   │   ├── PreviewPanel.tsx           # Canvas + zoom + export PNG
+│   │   └── ErrorConsole.tsx           # Exibe erros
 │   ├── engine/
-│   │   ├── types.ts              # Interface VectorContext
-│   │   ├── VectorEngine.ts       # Implementação dos métodos de desenho
-│   │   └── utils.ts              # Utilitários (cores, aleatoriedade)
+│   │   ├── types.ts                   # Interface VectorContext
+│   │   ├── VectorEngine.ts            # Implementação dos métodos de desenho
+│   │   ├── runner.ts                  # runAsset(): executa + finaliza (flush do modo pixel)
+│   │   ├── utils.ts                   # Utilitários (cores, aleatoriedade)
+│   │   └── pixel/
+│   │       ├── PixelBuffer.ts         # Grade RGBA (modo pixel)
+│   │       ├── color.ts               # Parse de cor, luminância, paleta mais próxima
+│   │       └── raster.ts              # Rasterização na grade (polígono, elipse, linha, dither)
 │   ├── hooks/
-│   │   └── useVectorRenderer.ts  # Compila e executa script no canvas
+│   │   └── useVectorRenderer.ts       # Compila e executa script no canvas
 │   ├── services/
-│   │   └── assetsApi.ts          # Cliente dos endpoints REST
-│   ├── vector-engine.d.ts        # Tipos globais para VS Code/Monaco
-│   └── App.tsx                   # Layout principal (3 colunas)
-├── SKILL.md                      # Instruções para o agente CLI
-├── vite.config.ts                # Config do Vite + middleware de API
-└── package.json
+│   │   └── assetsApi.ts               # Cliente dos endpoints REST
+│   ├── styles/
+│   │   ├── types.ts                   # Tipos do catálogo de estilos
+│   │   ├── registry.ts                # Catálogo (pixel + vetorial) e detecção por prompt
+│   │   ├── detect.ts                  # Detecta o estilo no código do asset
+│   │   └── index.ts                   # Re-exports
+│   ├── vector-engine.d.ts             # Tipos globais para VS Code/Monaco
+│   ├── App.tsx                        # Layout principal (3 colunas)
+│   ├── index.css                      # Tailwind v4
+│   └── main.tsx                       # Entrypoint React
+├── styles/                            # Guias técnicos por estilo (markdown)
+│   ├── pixel-pokemon-gba.md
+│   ├── pixel-generic.md
+│   ├── pixel-gameboy.md
+│   ├── pixel-nes.md
+│   ├── vector-flat.md
+│   ├── vector-cartoon.md
+│   ├── vector-outline.md
+│   └── skeletons/                     # Esqueletos extraídos de reference/
+│       ├── README.md
+│       ├── ref-front.md
+│       ├── ref-front-guia.png
+│       ├── ref-profile.md
+│       └── ref-profile-guia.png
+├── reference/                         # PNGs de referência do usuário (versionados)
+│   ├── character-front.png
+│   └── character-left.png
+├── SKILL.md                           # Instruções para o agente CLI
+├── vite.config.ts                     # Config do Vite + middleware de API
+├── tsconfig.app.json                  # TS para o front
+├── tsconfig.node.json                 # TS para Vite config, server e scripts
+├── package.json
+├── DOC.md                             # Este documento
+└── PLAN.md                            # Plano de implementação do modo pixel art
 ```
 
 ---
 
-## Fluxo de uso
+## 4. Fluxo de uso
 
-### 1. Gerar assets pelo CLI
+### 4.1 Gerar assets pelo OpenCode CLI
 
-```bash
-# O agente OpenCode CLI lê SKILL.md e salva scripts em asset_gen/<grupo>/
-```
+O agente CLI lê `SKILL.md` e:
 
-Regras do `SKILL.md`:
-- Cada prompt gera uma pasta em `asset_gen/<snake_case_descricao_01>/`.
-- Todos os assets do mesmo prompt são salvos nessa pasta.
-- Cada arquivo exporta `generateAsset(ctx: VectorContext)`.
+1. Gera código TypeScript com `export function generateAsset(ctx: VectorContext)`.
+2. Cria `asset_gen/` se não existir.
+3. Cria uma subpasta para o grupo/prompt: `asset_gen/<snake_case_descricao_01>/`.
+4. Salva todos os assets do mesmo prompt nessa pasta, um arquivo `.ts` por asset.
+5. (Opcional) Renderiza `preview.png`.
 
-### 2. Visualizar/editar na web
+### 4.2 Visualizar/editar na web
 
 ```bash
 npm run dev
 ```
 
-- O explorer lista grupos e arquivos `.ts`.
-- Clique carrega o script no editor.
-- Preview renderiza automaticamente.
-- `Ctrl+S` salva o arquivo no disco.
+1. O explorer lista grupos e arquivos `.ts`.
+2. Clique em um script carrega o código no Monaco Editor.
+3. O preview renderiza automaticamente.
+4. `Ctrl+S` salva o arquivo no disco.
 
-### 3. Renderizar previews em PNG
+### 4.3 Renderizar previews via CLI
 
 ```bash
-# Um arquivo
+# Um arquivo específico
 npm run render asset_gen/grupo_01/asset_01.ts
 
 # Uma pasta (usa o primeiro .ts como preview do grupo)
@@ -94,135 +132,525 @@ npm run render asset_gen/grupo_01
 
 ---
 
-## Backend (server/api.ts)
+## 5. Backend (server/api.ts)
 
-Endpoints REST servidos pelo próprio `vite.config.ts` via `configureServer`:
+O backend é um conjunto de endpoints Express servido dentro do próprio servidor de dev do Vite via `configureServer` em `vite.config.ts`.
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/api/assets` | Lista pastas e arquivos `.ts` de `asset_gen/` |
-| GET | `/api/assets/:folder/:file` | Lê conteúdo de um script |
-| POST | `/api/assets/:folder` | Cria pasta e salva arquivo `.ts` |
-| POST | `/api/assets/:folder/render` | Renderiza `preview.png` |
+| Método | Rota | Body | Descrição |
+|--------|------|------|-----------|
+| GET | `/api/assets` | — | Lista pastas e arquivos `.ts` de `asset_gen/` |
+| GET | `/api/assets/:folder/:file` | — | Lê conteúdo de um script |
+| POST | `/api/assets/:folder` | `{ file, content }` | Cria pasta e salva arquivo `.ts` |
+| POST | `/api/assets/:folder/render` | `{ file?, size? }` | Renderiza `preview.png` |
 
-A pasta `asset_gen` é criada automaticamente se não existir.
+Validações:
+- Caminhos são validados para ficar dentro de `asset_gen/`.
+- Apenas arquivos `.ts` podem ser salvos.
+- A pasta `asset_gen` é criada automaticamente.
+
+### Renderização no backend
+
+O endpoint `/render` compila o TypeScript com Sucrase, executa a função `generateAsset` com uma instância de `VectorEngine` e salva o PNG usando `@napi-rs/canvas`.
+
+```ts
+const canvas = createCanvas(size, size)
+const engine = new VectorEngine(ctx as unknown as CanvasRenderingContext2D)
+builder(engine)
+const buffer = await canvas.encode('png')
+await fs.writeFile(previewPath, buffer)
+```
 
 ---
 
-## API de desenho (VectorContext)
+## 6. API de desenho (VectorContext)
 
-Implementada em `src/engine/VectorEngine.ts`. Todos os scripts usam `ctx`:
+Implementada em `src/engine/VectorEngine.ts`.
+
+### 6.1 Conceito de coordenadas lógicas
+
+O canvas usa coordenadas **lógicas de 0 a 100**. O tamanho padrão real é **100×100 pixels**, mas pode ser alterado:
 
 ```typescript
 export function generateAsset(ctx: VectorContext) {
-  ctx.setBackground('#1f2937')
-  ctx.drawCircle(50, 50, 30, '#3b82f6')
+  ctx.setCanvasSize(512)   // renderiza em 512×512 pixels
+  ctx.drawCircle(50, 50, 30, '#3b82f6') // centro, raio 30% do canvas
 }
 ```
 
-### Formas
+A engine multiplica todas as coordenadas internamente por `width / 100`, mantendo a proporção.
 
-- `drawRect(x, y, w, h, color)`
-- `drawRoundedRect(x, y, w, h, radius, color)`
-- `drawCircle(cx, cy, r, color)`
-- `drawEllipse(cx, cy, rx, ry, color)`
-- `drawLine(x1, y1, x2, y2, thickness, color)`
-- `drawBezier(x1, y1, cp1x, cp1y, cp2x, cp2y, x2, y2, thickness, color)` — curva cúbica
-- `drawQuadratic(x1, y1, cpx, cpy, x2, y2, thickness, color)` — curva quadrática
-- `drawPolygon(points, color)`
-- `drawStar(cx, cy, outerR, innerR, points, color)`
-- `drawArc(cx, cy, r, startAngle, endAngle, color)`
+### 6.2 Métodos disponíveis
 
-### Grupos e transformações
+#### Formas básicas
 
-- `startGroup(id)` / `endGroup()` — salvam/restauram estado do canvas
-- `withGroup(id, fn)` — executa função dentro de um grupo
-- `translate(x, y)`
-- `rotate(angleDegrees)`
-- `scale(x, y?)`
+```typescript
+drawRect(x: number, y: number, w: number, h: number, color: string): void
+drawRoundedRect(x: number, y: number, w: number, h: number, radius: number, color: string): void
+drawCircle(cx: number, cy: number, r: number, color: string): void
+drawEllipse(cx: number, cy: number, rx: number, ry: number, color: string): void
+drawLine(x1: number, y1: number, x2: number, y2: number, thickness: number, color: string): void
 
-### Estilo e canvas
+// Curva de Bézier cúbica
+drawBezier(
+  x1: number, y1: number,
+  cp1x: number, cp1y: number,
+  cp2x: number, cp2y: number,
+  x2: number, y2: number,
+  thickness: number, color: string
+): void
 
-- `setFill(color)` / `setStroke(color, thickness)`
-- `setShadow(color, blur, offsetX?, offsetY?)` / `clearShadow()`
-- `setCanvasSize(width, height?)` — define resolução real mantendo coordenadas lógicas 0-100
-- `clear(color?)` / `setBackground(color)`
+// Curva de Bézier quadrática
+drawQuadratic(
+  x1: number, y1: number,
+  cpx: number, cpy: number,
+  x2: number, y2: number,
+  thickness: number, color: string
+): void
 
-### Utilitários procedural
-
-- `random(min?, max?)` / `randomInt(min?, max?)`
-- `randomColor()`
-- `pick(items)`
-
-### Tipos globais
-
-`src/vector-engine.d.ts` declara `VectorContext` e `Color` globalmente para VS Code e Monaco Editor não exigirem importação.
-
----
-
-## Partes cruciais do código
-
-### Compilação e execução no browser
-
-`src/hooks/useVectorRenderer.ts`:
-- Recebe o código TypeScript do editor.
-- Compila com Sucrase (`transform(..., { transforms: ['typescript'] })`).
-- Substitui `export function generateAsset` por `return function`.
-- Executa via `new Function(...)` e chama a função com uma instância de `VectorEngine`.
-- Exibe erros de compilação/execução no painel de preview.
-
-### Compilação e execução no Node
-
-`server/api.ts` (endpoint `/render`) e `scripts/render.ts` usam o mesmo padrão, mas com `@napi-rs/canvas` para criar o contexto 2D no Node. O contexto do `@napi-rs/canvas` é convertido via `as unknown as CanvasRenderingContext2D` porque `VectorEngine` espera o tipo do browser.
-
-### Editor com autocomplete
-
-`src/components/EditorPanel.tsx` injeta a definição global de `VectorContext` no Monaco via `addExtraLib`. A definição usa `interface VectorContext` sem `export` para ficar global dentro do editor.
-
-### Explorer
-
-`src/components/AssetExplorer.tsx` consome `GET /api/assets` e renderiza pastas expansíveis. Cada arquivo `.ts` é clicável e dispara `onSelect(folder, file)`.
-
-### Layout
-
-`src/App.tsx` organiza três colunas:
-1. Explorer (largura fixa em desktop)
-2. Editor
-3. Preview
-
-O estado `selectedPath` e `code` são gerenciados no `App`.
-
----
-
-## Convenções
-
-- Todos os scripts de asset devem exportar `generateAsset(ctx: VectorContext)`.
-- Cores são strings hexadecimais (`#RRGGBB`).
-- O canvas usa coordenadas lógicas de 0 a 100. O tamanho padrão é 100×100 pixels.
-- Use `ctx.setCanvasSize(n)` para render em alta resolução (ex: 512×512) sem perder a proporção das coordenadas.
-- O preview usa zoom via CSS (`width: realWidth * zoom`).
-- Export PNG usa o tamanho real do canvas.
-
----
-
-## Comandos úteis
-
-```bash
-npm run dev       # servidor de desenvolvimento
-npm run build     # build de produção
-npm run lint      # lint
-npm run render <caminho>  # renderiza PNG no Node
+drawPolygon(points: [number, number][], color: string): void
+drawStar(cx: number, cy: number, outerR: number, innerR: number, points: number, color: string): void
+drawArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: string): void
 ```
 
+#### Grupos e transformações
+
+```typescript
+startGroup(id: string): void
+endGroup(): void
+withGroup<T>(id: string, fn: () => T): T
+translate(x: number, y: number): void
+rotate(angleDegrees: number): void
+scale(x: number, y?: number): void
+```
+
+#### Estilo e efeitos
+
+```typescript
+setFill(color: string): void
+setStroke(color: string, thickness: number): void
+setShadow(color: string, blur: number, offsetX?: number, offsetY?: number): void
+clearShadow(): void
+```
+
+#### Canvas e utilitários
+
+```typescript
+setCanvasSize(width: number, height?: number): void
+clear(color?: string): void
+setBackground(color: string): void
+random(min?: number, max?: number): number
+randomInt(min?: number, max?: number): number
+randomColor(): string
+pick<T>(items: T[]): T
+```
+
+#### Estilo (catálogo)
+
+```typescript
+setStyle(styleId: string): void   // 1ª chamada do script; lança erro se o id não existir
+getStyle(): StyleInfo | null
+isPixelMode(): boolean
+```
+
+#### Primitivas de grade (modo pixel)
+
+```typescript
+drawPixel(x: number, y: number, color: string): void
+drawPixelRect(x: number, y: number, w: number, h: number, color: string): void
+drawPixelLine(x1: number, y1: number, x2: number, y2: number, color: string): void
+drawPixelCircle(cx: number, cy: number, r: number, color: string): void
+drawPixelEllipse(cx: number, cy: number, rx: number, ry: number, color: string): void
+drawPixelPolygon(points: [number, number][], color: string): void
+drawPixelMap(
+  rows: string[],
+  palette: Record<string, string>,
+  options?: {
+    x?: number; y?: number;
+    align?: 'left' | 'center' | 'right';
+    trim?: boolean;
+    mirror?: 'x';
+    flipX?: boolean;
+    transparent?: string[];
+  }
+): void
+```
+
+> `drawPixelMap` **lança erro** quando as linhas do mapa têm larguras diferentes (sprite torto).
+> Use `trim: true` para cortar a moldura vazia e `mirror: 'x'` para desenhar só metade e espelhar.
+
+#### Utilitários de grade (modo pixel)
+
+```typescript
+outlinePixels(color: string, options?: { diagonal?: boolean }): void
+separatePixels(ink: string, options?: { includeDiagonal?: boolean }): void
+shadePixels(from: string, to: string): void
+ditherPixels(x, y, w, h, colorA, colorB, pattern?: 'bayer4' | 'checker' | 'dots'): void
+mirrorPixels(axis: 'x' | 'y'): void
+```
+
+> `separatePixels` desenha uma linha escura **entre regiões de cores diferentes** (contorno interno).
+> A linha é "carvada" da região maior, para que detalhes pequenos (olhos, emblemas) preservem a forma;
+> regiões que perderiam mais de 30% dos pixels não são corroídas.
+
+#### Paleta
+
+```typescript
+setPalette(colors: string[]): void
+```
+
+Trava a paleta do asset (sobrescreve a do preset). No `finalize()`, os presets com `quantize: true`
+( todos os de pixel art) mapeiam cada célula para a cor mais próxima da paleta ativa.
+
+### 6.3 Tipos globais
+
+`src/vector-engine.d.ts` declara `VectorContext` e `Color` globalmente. Isso faz com que VS Code e Monaco Editor reconheçam o tipo sem importação.
+
 ---
 
-## Pontos de atenção para futuras modificações
+## 7. Frontend
 
-- Se adicionar novos métodos à `VectorContext`, atualize:
-  - `src/engine/types.ts`
-  - `src/engine/VectorEngine.ts`
-  - `src/vector-engine.d.ts`
-  - `src/components/EditorPanel.tsx` (extra-lib do Monaco)
-  - `SKILL.md`
-- O backend roda dentro do servidor de dev do Vite; em produção os endpoints não existem automaticamente.
+### 7.1 App.tsx
+
+Layout de 3 colunas:
+
+1. **Explorer** (`AssetExplorer`) — largura fixa em desktop.
+2. **Editor** (`EditorPanel`) — Monaco Editor.
+3. **Preview** (`PreviewPanel`) — Canvas.
+
+Estados principais:
+- `selectedPath`: caminho relativo do arquivo selecionado (`grupo/arquivo.ts`).
+- `code`: conteúdo atual do editor.
+- `originalCode`: conteúdo salvo no disco (para detectar modificações).
+- `zoom`: fator de zoom do preview.
+
+### 7.2 AssetExplorer
+
+- Consome `GET /api/assets`.
+- Renderiza pastas expansíveis.
+- Cada `.ts` é clicável e dispara `onSelect(folder, file)`.
+- Botão de atualizar (↻) para recarregar a árvore.
+
+### 7.3 EditorPanel
+
+- Usa Monaco Editor com definição global de `VectorContext` injetada via `addExtraLib`.
+- Exibe o caminho do arquivo selecionado.
+- Mostra "modificado" quando `code !== originalCode`.
+- Botão "Salvar" e atalho `Ctrl+S`.
+
+### 7.4 PreviewPanel
+
+- Usa o hook `useVectorRenderer` para compilar e executar o código.
+- Canvas tem a resolução real definida pelo script.
+- Zoom via slider de `0.25x` a `5x`.
+- Exportação PNG com o tamanho real do canvas.
+
+### 7.5 useVectorRenderer
+
+Responsabilidades:
+
+1. Cria canvas com tamanho padrão 100×100.
+2. Compila o TypeScript com Sucrase.
+3. Substitui `export function generateAsset` por `return function`.
+4. Executa via `new Function(...)`.
+5. Instancia `VectorEngine` e chama `generateAsset`.
+6. Lê o tamanho final do canvas e expõe para o PreviewPanel.
+7. Captura erros de compilação/execução e exibe no preview.
+
+---
+
+## 8. Motor gráfico (VectorEngine)
+
+### 8.1 Escala interna
+
+```ts
+private scaleFactor: number = 1
+
+private s(value: number): number {
+  return value * this.scaleFactor
+}
+```
+
+`setCanvasSize(width, height?)` define:
+
+```ts
+this.scaleFactor = width / 100
+this.ctx.canvas.width = width
+this.ctx.canvas.height = height ?? width
+```
+
+Todos os métodos de desenho aplicam `s()` nas coordenadas, raio, espessura, blur e offsets.
+
+### 8.2 Adicionar um novo método
+
+Para adicionar um novo método à API de desenho:
+
+1. **Interface**: adicione em `src/engine/types.ts`.
+2. **Implementação**: adicione em `src/engine/VectorEngine.ts`.
+   - Use `this.s(value)` para escalonar valores de posição/tamanho/espessura.
+   - Se o método só faz sentido no modo pixel, valide com `this.requirePixelBuffer('<metodo>')`.
+3. **Tipos globais**: adicione em `src/vector-engine.d.ts`.
+4. **Autocomplete Monaco**: adicione em `src/components/EditorPanel.tsx` (constante `EXTRA_LIB`).
+5. **Documentação do agente CLI**: adicione em `SKILL.md`.
+6. **Documentação do projeto**: atualize este `DOC.md`.
+
+### 8.3 Modo pixel art
+
+Quando `ctx.setStyle('<id>')` aponta para um estilo da família `pixel`, o motor:
+
+1. Cria um `PixelBuffer` com `cols × rows` células (ex.: 56×56).
+2. Redimensiona o canvas para `cols × pixelScale` (ex.: 448×448).
+3. Redireciona **todas** as primitivas vetoriais para a grade (sem antialias).
+4. Mantém transformações (`translate`/`rotate`/`scale`) em uma matriz própria aplicada às células.
+5. No `finalize()`, faz o upscale nearest-neighbor (escala inteira) do buffer no canvas.
+
+A execução de todo asset passa por `runAsset(engine, builder)` (`src/engine/runner.ts`),
+que chama `builder(engine)` e depois `engine.finalize()`. **Esquecer o `finalize()` deixa o
+preview vazio**, porque no modo pixel o desenho vive no buffer e não no canvas.
+
+Rasterização das primitivas vetoriais na grade:
+
+| Primitiva vetorial | Conversão |
+|---|---|
+| `drawRect`, `drawPolygon` | Polígono → teste do centro da célula (even-odd) |
+| `drawRoundedRect` | Polígono com cantos arredondados amostrados |
+| `drawCircle`, `drawEllipse` | Teste analítico de distância |
+| `drawStar` | Polígono de pontas (mesma construção da versão vetorial) |
+| `drawArc` | Setor (ângulo + raio) |
+| `drawLine` | Bresenham na grade |
+| `drawBezier`, `drawQuadratic` | Amostragem em polilinha → Bresenham |
+
+No modo pixel, `setCanvasSize(w, h)` deixa de definir a grade e passa a definir a **resolução de
+saída**: `pixelScale = floor(min(w / cols, h / rows))`, sempre inteiro para não gerar pixels tortos.
+
+---
+
+## 9. CLI de renderização (scripts/render.ts)
+
+Renderiza um arquivo `.ts` ou o primeiro `.ts` de uma pasta.
+
+```bash
+npm run render <caminho>
+```
+
+Comportamento:
+
+- Se o caminho for um arquivo `.ts`: gera `<nome>.png` na mesma pasta.
+- Se o caminho for uma pasta: gera `preview.png` usando o primeiro `.ts` encontrado.
+
+---
+
+## 10. Configurações TypeScript
+
+### tsconfig.app.json
+
+- Aplica-se a `src/**/*`.
+- Libs: `ES2023`, `DOM`.
+- `moduleResolution: bundler`.
+
+### tsconfig.node.json
+
+- Aplica-se a `vite.config.ts`, `server/**/*.ts`, `scripts/**/*.ts`.
+- Libs: `ES2023`, `DOM` (necessário porque server/scripts importam `VectorEngine`).
+- `module: nodenext` — exige extensões `.js` em imports relativos.
+
+---
+
+## 11. Comandos úteis
+
+```bash
+npm install         # instala dependências
+npm run dev         # servidor de desenvolvimento
+npm run build       # build de produção
+npm run lint        # lint do código
+npm run preview     # preview do build
+npm run render <caminho>  # renderiza PNG no Node
+npm run render <caminho> --size 512  # renderiza com resolução inicial de 512 (vetorial)
+npm run styles:check      # valida o catálogo de estilos, o SKILL.md e os esqueletos
+npm run skeleton <png>    # extrai um esqueleto .md de uma imagem de reference/
+npm run pixelize <png>    # gera um asset .ts editável a partir de uma imagem
+npm run doctor <asset>    # relatório de qualidade do asset (texto)
+```
+
+> Em npm, flags de script precisam do separador `--`:
+> `npm run skeleton -- reference/x.png --pose front --name x`.
+
+---
+
+## 12. Convenções
+
+- Todo script de asset deve exportar `generateAsset(ctx: VectorContext)`.
+- Não importar bibliotecas dentro dos scripts gerados.
+- Cores em hexadecimal (`#RRGGBB`).
+- Coordenadas lógicas de 0 a 100.
+- Use `setCanvasSize(n)` para alta resolução.
+- Um grupo = uma pasta em `asset_gen/`.
+- Um asset = um arquivo `.ts` dentro do grupo.
+
+---
+
+## 13. Pontos de atenção
+
+- O backend só existe no servidor de dev do Vite. Em produção (build estático), os endpoints não estarão disponíveis.
 - `@napi-rs/canvas` tem binários nativos; em alguns ambientes pode exigir reinstalação.
+- O Monaco Editor recebe os tipos via `addExtraLib`; arquivos `.d.ts` do projeto não são automaticamente lidos por ele.
+- Quando `setCanvasSize` é chamado, o canvas é redimensionado antes do desenho. Deve ser a primeira chamada no script para evitar apagar arte já desenhada.
+- No modo pixel, `setCanvasSize` é ignorado como troca de grade: ele define apenas a resolução final.
+- `asset_gen/` é ignorado pelo ESLint (código gerado, fora do versionamento).
+
+---
+
+## 14. Estilos e pixel art
+
+### 14.1 Catálogo de estilos
+
+O catálogo vive em `src/styles/registry.ts` e é a **fonte única** de configuração (consumido pelo
+motor e pelo frontend). Cada estilo tem:
+
+| Campo | Descrição |
+|---|---|
+| `id` | Identificador usado em `ctx.setStyle('<id>')` |
+| `label` | Nome exibido na UI |
+| `family` | `pixel` ou `vector` |
+| `keywords` | Palavras do prompt que selecionam o estilo (minúsculas, sem acento) |
+| `priority` | Menor número = maior precedência na detecção |
+| `guide` | Caminho do guia técnico (`styles/<id>.md`) |
+| `rules` | Regras curtas exibidas na UI e resumidas no `SKILL.md` |
+
+Estilos cadastrados:
+
+| Id | Família | Grade | Saída | Cores |
+|---|---|---|---|---|
+| `pixel-pokemon-gba` | pixel | 56×56 | 448×448 | até 21 |
+| `pixel-gameboy` | pixel | 48×48 | 384×384 | 4 (quantizado) |
+| `pixel-nes` | pixel | 32×32 | 512×512 | 16 (quantizado) |
+| `pixel-generic` | pixel | 32×32 | 256×256 | até 16 |
+| `vector-cartoon` | vector | — | livre | livre |
+| `vector-outline` | vector | — | livre | livre |
+| `vector-flat` | vector | — | livre | livre (padrão) |
+
+### 14.2 Seleção de estilo pelo prompt
+
+A regra mora no `SKILL.md` (é o agente do CLI quem lê o prompt) e é espelhada em
+`matchStyleFromPrompt()` no código, para a UI e para os testes:
+
+| Prioridade | Tipo de keyword | Exemplo | Estilo |
+|---|---|---|---|
+| 1 | Marca / jogo | "pokemon", "game boy", "nes" | preset específico |
+| 2 | Técnica | "16-bit", "snes" | `pixel-generic` |
+| 3 | Genérica de pixel | "pixel art", "pixelado", "sprite" | `pixel-generic` |
+| 4 | Vetorial | "flat", "cartoon", "contorno" | `vector-*` |
+| 5 | Nenhuma | — | `vector-flat` |
+
+A comparação usa palavra inteira (`(?<![a-z0-9])...(?![a-z0-9])`), então "nes" não casa com
+"linhas" e "pokemon" casa com "Pokémon" (o texto é normalizado sem acento).
+
+### 14.3 Contrato do script gerado
+
+```typescript
+// Prompt: Faça um personagem no estilo pixel art de pokemon
+// Estilo: pixel-pokemon-gba
+// Asset: personagem pixel art
+// Gerado em: 2026-11-06
+
+export function generateAsset(ctx: VectorContext) {
+  ctx.setStyle('pixel-pokemon-gba');
+  // ...desenho...
+}
+```
+
+O estilo é registrado em duas fontes redundantes: o comentário `// Estilo:` (leitura humana) e a
+chamada `ctx.setStyle()` (o que o motor executa). O frontend detecta as duas com
+`src/styles/detect.ts` e avisa quando elas divergem.
+
+### 14.4 Frontend
+
+- **Badge** com o rótulo do estilo e o tamanho da grade (`56x56`).
+- **Paleta** do estilo exibida em swatches (clique copia o hex).
+- **Overlay de grade** (botão "Grade") com uma linha por célula.
+- **Zoom inteiro** (1×, 2×, 4×, 8×, 16×) em estilos pixel, com `imageRendering: pixelated` sempre.
+  Em estilos vetoriais o slider contínuo (0.25×–5×) continua igual.
+
+### 14.5 Validação
+
+```bash
+npm run styles:check
+```
+
+Verifica: ids únicos, keywords em minúsculas e sem acento, paletas com hex válido, grade e escala
+coerentes, existência de cada guia em `styles/`, presença de todos os ids e dos novos comandos no
+`SKILL.md` e o resultado esperado da detecção para uma lista de prompts canônicos. Também confere
+que os esqueletos em `styles/skeletons/` têm mapa ASCII retangular.
+
+---
+
+## 15. Referências, esqueletos e doctor
+
+### 15.1 A pasta `reference/`
+
+O usuário deposita PNGs de referência (personagens, itens, assets) na raiz do projeto. São
+versionados (arquivos pequenos). As imagens **não** entram no bundle do front: o extrator roda
+apenas no Node (`scripts/lib/`), usando `@napi-rs/canvas`.
+
+### 15.2 `npm run skeleton` — imagem → esqueleto `.md`
+
+```bash
+npm run skeleton -- reference/character-front.png --pose front --name ref-front --style pixel-pokemon-gba
+```
+
+Gera dois arquivos em `styles/skeletons/`:
+
+| Arquivo | Conteúdo |
+|---|---|
+| `<nome>.md` | Mapa ASCII + tabela de papéis (char → papel → hex) + geometria relativa (regiões em %) + regras |
+| `<nome>-guia.png` | A referência ampliada com o grid 0–100 e os bboxes das regiões (para leitura vetorial) |
+
+**Detecção da grade** (`detectCellSize`): o maior `c` para o qual as fronteiras de cor caem em
+múltiplos de `c` **e** todos os blocos não transparentes são monocromáticos. Funciona para sprite
+nativo (56×56 → `c = 1`) e para upscale (448×448 de uma grade 56×56 → `c = 8`).
+`--cell <n>` sobrescreve.
+
+**Recorte**: por padrão o esqueleto é o *bbox* do sprite (ex.: 14×19), não a grade cheia — menos
+token e só a forma interessa. A posição na grade original fica no frontmatter.
+
+### 15.3 `npm run pixelize` — referência → asset editável
+
+```bash
+npm run pixelize -- reference/character-front.png --style pixel-pokemon-gba --out asset_gen/grupo/personagem.ts
+```
+
+Gera um `.ts` com `setStyle` + `setPalette` + `drawPixelMap` (mapa recortado, cores aproximadas na
+paleta do preset). O resultado é editável e renderiza igual à referência dentro da grade.
+
+### 15.4 `npm run doctor` — o crítico barato (texto)
+
+```bash
+npm run doctor -- asset_gen/grupo/personagem.ts
+npm run doctor -- asset_gen/grupo/preview.png
+```
+
+| Check | Como é medido |
+|---|---|
+| Mapa irregular | Estático no `.ts`: larguras das linhas do `drawPixelMap` |
+| Cor fora da paleta | Cores do PNG renderizado vs paleta ativa (preset ou `setPalette`) |
+| Contorno externo | Fração da borda da silhueta que usa a cor de contorno do preset |
+| Separação interna | Trocas de cor entre vizinhos sem pixel de contorno no meio |
+| Silhueta irregular | Fração de linhas em que a borda salta mais de 1 célula (mapa ralo) |
+| Simetria | Similaridade entre a metade esquerda e a direita espelhada |
+| Nº de cores | Distintas no asset vs `maxColors` do preset |
+| Densidade | % de pixels que não são da cor dominante |
+
+Saída em texto (barato em token) e **exit code ≠ 0** quando há falhas.
+
+### 15.5 Fluxo do agente (obrigatório)
+
+1. `npm run skeleton` (se houver referência) → leia o `.md`.
+2. Escreva o asset copiando a estrutura.
+3. `npm run render -- <pasta>` → **leia o `preview.png`**.
+4. `npm run doctor -- <asset.ts>` → corrija.
+5. Repita 3–4 (máximo 3 rodadas).
+
+### 15.6 Convenção `_archive`
+
+Pastas dentro de `asset_gen/` com prefixo `_` (ex.: `asset_gen/_archive/`) são áreas de trabalho:
+ficam fora do versionamento (o `.gitignore` já ignora `asset_gen/*`) e **não aparecem no explorer**
+(o endpoint `/api/assets` ignora pastas com prefixo `_`).
