@@ -25,6 +25,10 @@ Estilo de personagem de desenho animado: contorno grosso, cores chapadas e propo
 - Many tonalidades por superficie: vira realismo, nao cartoon.
 - Detalhe anatomico fino: nao cabe no estilo.
 
+## Verificação
+
+Antes de entregar: `npm run render -- <pasta>` → **ler o preview.png** → `npm run doctor -- <asset.ts>`.
+
 ## Exemplo
 
 ```typescript

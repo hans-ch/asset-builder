@@ -25,11 +25,13 @@ Cores    #EF4444  #F97316  #F59E0B  #84CC16  #22C55E  #06B6D4  #3B82F6  #A855F7
 ## Regras
 
 1. **Grade 32x32**: o sprite ocupa 24-28 px e fica centralizado (offset ~2).
-2. **Silhueta primeiro**: se a forma nao se le em silhueta preta, o icone esta ruim.
-3. **Contorno escuro de 1 px** (`ctx.outlinePixels('#0F172A')`).
-4. **3 tons**: base, luz em cima, sombra embaixo. Sem gradiente.
-5. **Detalhes pequenos viram blocos**: em 32x32 um detalhe de 1 px some. Prefira 2 px.
-6. **Icones simples**: menos elementos = mais legibilidade. 2 a 3 formas principais.
+2. **Mapa retangular**: `drawPixelMap` lança erro se as linhas tiverem larguras diferentes.
+3. **Silhueta primeiro**: se a forma nao se lê em silhueta preta, o icone está ruim.
+4. **Contorno escuro de 1 px** (`ctx.outlinePixels('#0F172A')`).
+5. **Separação entre regiões**: `ctx.separatePixels('#0F172A')` (ex.: detalhe claro sobre corpo escuro).
+6. **3 tons**: base, luz em cima, sombra embaixo. Sem gradiente.
+7. **Detalhes pequenos viram blocos**: em 32x32 um detalhe de 1 px some. Prefira 2 px.
+8. **Icones simples**: menos elementos = mais legibilidade. 2 a 3 formas principais.
 
 ## Anti-padrões
 

@@ -82,6 +82,51 @@ if (existsSync(skillPath)) {
   fail('SKILL.md nao encontrado.');
 }
 
+// --- Mapas de exemplo do SKILL.md precisam ser retangulares ---
+
+if (existsSync(skillPath)) {
+  const skill = readFileSync(skillPath, 'utf-8');
+  let searchFrom = 0;
+
+  while (true) {
+    const index = skill.indexOf('drawPixelMap(', searchFrom);
+    if (index === -1) break;
+    searchFrom = index + 1;
+
+    const open = skill.indexOf('[', index);
+    if (open === -1) break;
+
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < skill.length; i++) {
+      const char = skill[i];
+      if (char === '[') depth++;
+      else if (char === ']') {
+        depth--;
+        if (depth === 0) {
+          close = i;
+          break;
+        }
+      }
+    }
+    if (close === -1) break;
+
+    const rows = [...skill.slice(open, close).matchAll(/'([^']*)'/g)].map((match) => match[1]);
+    if (rows.length === 0) continue;
+
+    const expected = rows[0].length;
+    const invalid = rows
+      .map((row, rowIndex) => ({ row, rowIndex }))
+      .filter((entry) => entry.row.length !== expected);
+    if (invalid.length > 0) {
+      const detail = invalid
+        .map((entry) => `linha ${entry.rowIndex + 1} tem ${entry.row.length}`)
+        .join(', ');
+      fail(`SKILL.md: exemplo de mapa irregular (esperado ${expected} colunas): ${detail}`);
+    }
+  }
+}
+
 // --- Esqueletos gerados a partir de reference/ ---
 
 const skeletonsDir = path.join(ROOT, 'styles', 'skeletons');

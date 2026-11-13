@@ -88,6 +88,18 @@ No modo pixel o desenho acontece em uma grade discreta (sem antialias) e o previ
 do estilo, a paleta e um overlay de grade. As regras técnicas de cada estilo estão em `styles/<id>.md`
 e no `SKILL.md`.
 
+## Interface
+
+Layout de 3 colunas: **Explorer** · **Editor (TypeScript Source)** · **Preview**.
+
+- As colunas são **redimensionáveis**: arraste a alça escura entre elas (ou use as setas do teclado
+  com a alça focada). As larguras são lembradas no navegador (`localStorage`).
+- O **zoom** começa em **1x** e é resetado para 1x a cada script escolhido no explorer.
+  O slider fica sempre visível: em pixel art a faixa é 1×–16× (inteira, para o pixel não borrar) e em
+  vetorial 0,25×–5×.
+- Em pixel art o preview mostra o badge do estilo, a paleta (clique copia o hex), o overlay de grade
+  e os atalhos de zoom.
+
 ## Scripts
 
 - `npm run dev` — servidor de desenvolvimento com explorer de assets
@@ -101,7 +113,7 @@ e no `SKILL.md`.
 - `npm run doctor <asset>` — relatório de qualidade do asset (texto, exit code)
 
 > Flags de script no npm precisam do separador `--`:
-> `npm run skeleton -- reference/character-front.png --pose front --name ref-front`.
+> `npm run skeleton -- reference/slime_chibi_sprite.png --pose front --name slime-chibi`.
 
 ## Imagens de referência e esqueletos
 
@@ -113,10 +125,22 @@ A pasta `reference/` guarda os PNGs de referência (personagens, itens, assets).
 - `<nome>-guia.png` — a referência com grid 0–100 sobreposto (para ler coordenadas com visão).
 
 ```bash
-npm run skeleton -- reference/character-front.png --pose front --name ref-front --style pixel-pokemon-gba
+npm run skeleton -- reference/slime_chibi_sprite.png --pose front --name slime-chibi \
+  --style pixel-pokemon-gba --max-colors 16
 ```
 
-Já existem dois esqueletos prontos: `ref-front` (frente) e `ref-profile` (perfil), ambos 14×19.
+O extrator lida com folhas geradas por IA: remove o fundo sólido (flood fill a partir da borda),
+descarta texto e pose extras, posteriza as cores (median cut) e detecta a grade da arte.
+
+| Flag | Efeito |
+|---|---|
+| `--max-colors <n>` | Limita as cores do esqueleto (padrão 24; use 12–16 para pixel art) |
+| `--max-cols <n>` | Limita a largura da grade (padrão 48) |
+| `--cell <n>` | Força o tamanho da célula em px |
+| `--no-trim` | Não recorta a moldura vazia |
+
+Esqueletos prontos: `slime-chibi` (32×28), `caveira-chibi` (30×47), `diabrete-chibi` (33×24),
+`espadachim-chibi` (33×33) e `fantasma-chibi` (25×31).
 
 ## Verificar a qualidade de um asset
 

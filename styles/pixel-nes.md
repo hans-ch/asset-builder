@@ -31,6 +31,8 @@ Visual dos jogos de NES: paleta fixa e resolucao baixa (32x32), com forms simple
 3. **Sombreamento em 2 tons** apenas.
 4. **Paleta NES**: cores saturadas e puras, sem tons pastéis.
 5. **Silhueta forte**: o NES usava sprites pequenos, entao a forma geral carrega o desenho.
+6. **Mapa retangular**: `drawPixelMap` lança erro se as linhas tiverem larguras diferentes.
+7. **Separacao entre regioes**: `ctx.separatePixels('#000000')` antes do `outlinePixels`.
 
 ## Anti-padrões
 

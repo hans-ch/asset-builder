@@ -30,6 +30,8 @@ Visual monocromatico do Game Boy original: 4 tons de verde sobre fundo quase pre
 3. **Grade generosa** (48x48) para caber detalhe sem poluir.
 4. **Sombreamento em 2 tons** (base + sombra). O terceiro tom so com dithering.
 5. **Dithering** (`ctx.ditherPixels(..., 'bayer4')`) para simular meio-tom em céu, chão e água.
+6. **Mapa retangular**: `drawPixelMap` lança erro se as linhas tiverem larguras diferentes.
+7. **Separação entre regiões**: `ctx.separatePixels('#0F380F')` antes do `outlinePixels`.
 
 ## Anti-padrões
 

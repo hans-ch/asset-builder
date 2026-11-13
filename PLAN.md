@@ -844,3 +844,64 @@ badge do estilo, a paleta e o overlay de grade, com zoom em múltiplos inteiros.
 - `npm run doctor` nos assets de exemplo: `espada_pixel_generic_01` e `bebe_gameboy_01` passam
   limpos; `personagem_pixel_pokemon_01` passou a passar depois de corrigir o mapa e de trocar
   `outlinePixels` por `separatePixels` + contorno manual nas orelhas/rabo.
+
+### 16.4 Ajustes pontuais (zoom da interface + referências de IA)
+
+| # | Ajuste | Detalhe |
+|---|---|---|
+| A1 | **Zoom padrão 1x** | `App.tsx`: `useState(1)` (era 4) e `setZoom(1)` ao selecionar qualquer script no explorer |
+| A2 | **Slider de zoom sempre visível** | No modo pixel o slider era *substituído* pelos botões 1x–16x; agora o slider fica no header em ambos os modos (pixel: 1–16, passo inteiro; vetorial: 0.25–5) e os botões rápidos foram para a barra de estilo |
+| A3 | Sincronia de faixa | Efeito que reajusta o zoom quando o estilo muda (ex.: 16x em pixel → 5x em vetorial) |
+| A4 | **Extrator para referências de IA** | `removeBackground` por *flood fill* a partir da borda (não remove o personagem isolado), `keepMainComponents` (descarta texto/pose extras), `posterize` (median cut, `--max-colors`), `detectCellSize` por GCD dos runs + alinhamento, `--max-cols` (48) |
+| A5 | Esqueletos regenerados | As 2 referências antigas foram substituídas por 5 folhas de IA 1024×1024 → 5 esqueletos novos (`slime`, `caveira`, `diabrete`, `espadachim`, `fantasma`) + guias PNG; os esqueletos `ref-front`/`ref-profile` foram removidos (fontes deletadas) |
+
+**Limitação conhecida:** texto das folhas de IA que fica **conectado** ao personagem (pela fumaça/poeira
+da IA) não é separado pelo filtro de componentes — sobram alguns pixels isolados no esqueleto. Dá para
+resolver cortando a imagem antes, ou aumentando `--max-colors`/`--cell`.
+
+---
+
+## 17. Ajustes de interface e revisão da documentação
+
+### 17.1 Zoom do preview (bug corrigido)
+
+| Antes | Depois |
+|---|---|
+| Estado do zoom **derivado** dentro do `PreviewPanel`, com um `useEffect` escrevendo de volta no `App` (fonte de duplicidade e de valores fora da faixa) | **Fonte única de verdade**: o `App` guarda o zoom, deriva `effectiveZoom` (limitado à faixa) e passa `zoom` + `zoomRange` como props |
+| Ao trocar de estilo o valor podia ficar fora da faixa (`min`/`max` mudavam com o `<input type="range">` Controlled) | O valor enviado ao slider é **sempre** dentro da faixa — sem aviso do React e sem "pulo" do thumb |
+| Label "Zoom" competia com o espaço na coluna estreita | Header mais compacto (slider `w-20`, sem label, `flex-wrap`) |
+
+### 17.2 Painéis redimensionáveis
+
+Novo componente `src/components/Resizer.tsx` (alça de 4 px entre as colunas):
+
+- arraste com o mouse (eventos no `window`, o cursor pode sair da área);
+- setas do teclado (`←`/`→`, `Shift` = passo maior) com `role="separator"` e `aria-valuenow`;
+- larguras persistidas em `localStorage` (`asset-builder:explorer-width`, `asset-builder:editor-width`);
+- oculto abaixo de `lg` (layout empilhado no mobile).
+
+| Painel | Padrão | Mín | Máx |
+|---|---|---|---|
+| Explorer | 256 px | 180 | 520 |
+| Editor | 42% da janela | 280 | 1400 |
+| Preview | `flex-1` (restante) | — | — |
+
+### 17.3 Revisão da documentação
+
+| Arquivo | Revisão |
+|---|---|
+| `README.md` | Nova seção **Interface** (zoom 1x, colunas redimensionáveis); flags do `skeleton`; tabela dos 5 esqueletos; extractor para IA |
+| `DOC.md` | §3 (pasta `Resizer.tsx`), §7.1 (layout, larguras, zoom derivado do estilo), §7.2 (pastas `_`), §7.4/§7.5 (preview e hook), §15 (flags e tratamento de IA) |
+| `SKILL.md` | Regras do mapa retangular e `separatePixels` nos 4 guias pixel; verificação (render → doctor) nos 3 guias vetoriais; tabela dos esqueletos |
+| `styles/*.md` | Regras atualizadas (grade ~32×32, `separatePixels`, mapa retangular) e seção de verificação |
+| `styles/skeletons/README.md` | Índice dos 5 esqueletos + flags |
+| `scripts/check-styles.ts` | Novo check: **os mapas de exemplo do `SKILL.md` precisam ser retangulares** (a doc não pode ensinar exemplo quebrado) |
+
+### 17.4 Verificação executada
+
+- `npm run build` — ok; `npm run lint` — sem erros; `npm run styles:check` — 7 estilos + exemplos
+  do SKILL.md + esqueletos válidos.
+- Dev server: `/`, `/src/App.tsx`, `/src/components/Resizer.tsx`, `/src/components/PreviewPanel.tsx`
+  e `/api/assets` respondem 200.
+- CSS gerado confere: `.lg\:w-\[var\(--explorer-w\)\]{width:var(--explorer-w)}` e
+  `.lg\:w-\[var\(--editor-w\)\]{width:var(--editor-w)}`.

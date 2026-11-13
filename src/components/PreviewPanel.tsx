@@ -1,25 +1,41 @@
 import { useState } from 'react';
 import { useVectorRenderer } from '../hooks/useVectorRenderer';
+import type { DetectedStyle } from '../styles/detect.js';
+import type { StyleInfo } from '../styles/types.js';
+
+interface ZoomRange {
+  min: number;
+  max: number;
+  step: number;
+}
 
 interface Props {
   generatedCode: string;
+  /** Zoom efetivo (ja dentro da faixa). */
   zoom: number;
+  zoomRange: ZoomRange;
+  style: StyleInfo | null;
+  detected: DetectedStyle;
   onZoomChange: (zoom: number) => void;
 }
 
 const PIXEL_ZOOMS = [1, 2, 4, 8, 16];
 
-export function PreviewPanel({ generatedCode, zoom, onZoomChange }: Props) {
-  const { canvasRef, error, canvasSize, style, detected } = useVectorRenderer(generatedCode);
+export function PreviewPanel({
+  generatedCode,
+  zoom,
+  zoomRange,
+  style,
+  detected,
+  onZoomChange,
+}: Props) {
+  const { canvasRef, error, canvasSize } = useVectorRenderer(generatedCode);
   const [showGrid, setShowGrid] = useState(false);
 
   const isPixel = style?.family === 'pixel';
-  const effectiveZoom = isPixel
-    ? Math.min(16, Math.max(1, Math.round(zoom)))
-    : zoom;
 
-  const displayWidth = Math.max(canvasSize.width * effectiveZoom, 1);
-  const displayHeight = Math.max(canvasSize.height * effectiveZoom, 1);
+  const displayWidth = Math.max(canvasSize.width * zoom, 1);
+  const displayHeight = Math.max(canvasSize.height * zoom, 1);
   const cellSize = isPixel && style.cols > 0 ? canvasSize.width / style.cols : 0;
 
   function downloadPNG() {
@@ -40,43 +56,25 @@ export function PreviewPanel({ generatedCode, zoom, onZoomChange }: Props) {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="px-3 py-2 bg-gray-800 border-b border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-400 flex justify-between items-center">
+      <div className="px-3 py-2 bg-gray-800 border-b border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-400 flex justify-between items-center gap-2 flex-wrap">
         <span>Preview</span>
-        <div className="flex items-center gap-2">
-          {isPixel ? (
-            <div className="flex items-center gap-1 normal-case font-normal">
-              {[...PIXEL_ZOOMS].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => onZoomChange(value)}
-                  className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
-                    effectiveZoom === value
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {value}x
-                </button>
-              ))}
-            </div>
-          ) : (
-            <>
-              <label className="text-gray-500 font-normal normal-case">Zoom</label>
-              <input
-                type="range"
-                min={0.25}
-                max={5}
-                step={0.25}
-                value={zoom}
-                onChange={(e) => onZoomChange(parseFloat(e.target.value))}
-                className="w-24 accent-blue-500"
-              />
-              <span className="text-gray-500 font-normal normal-case w-12 text-right">{zoom}x</span>
-            </>
-          )}
+        <div className="flex items-center gap-2 shrink-0">
+          <input
+            type="range"
+            min={zoomRange.min}
+            max={zoomRange.max}
+            step={zoomRange.step}
+            value={zoom}
+            onChange={(e) => onZoomChange(parseFloat(e.target.value))}
+            className="w-20 accent-blue-500"
+            title={`Zoom (${zoomRange.min}x a ${zoomRange.max}x)`}
+          />
+          <span className="text-gray-500 font-normal normal-case w-10 text-right">
+            {zoom}x
+          </span>
           <button
             onClick={downloadPNG}
-            className="ml-2 px-3 py-1 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition-colors"
+            className="ml-1 px-3 py-1 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition-colors"
           >
             PNG
           </button>
@@ -100,6 +98,22 @@ export function PreviewPanel({ generatedCode, zoom, onZoomChange }: Props) {
                 className="w-3 h-3 rounded-sm border border-gray-600 hover:scale-125 transition-transform"
                 style={{ backgroundColor: color }}
               />
+            ))}
+          </div>
+          <div className="flex items-center gap-1 ml-1">
+            {PIXEL_ZOOMS.map((value) => (
+              <button
+                key={value}
+                onClick={() => onZoomChange(value)}
+                title={`Zoom ${value}x`}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                  zoom === value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {value}x
+              </button>
             ))}
           </div>
           <button
@@ -147,7 +161,7 @@ export function PreviewPanel({ generatedCode, zoom, onZoomChange }: Props) {
               style={{
                 backgroundImage:
                   'linear-gradient(to right, rgba(255,255,255,0.28) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.28) 1px, transparent 1px)',
-                backgroundSize: `${cellSize * effectiveZoom}px ${cellSize * effectiveZoom}px`,
+                backgroundSize: `${cellSize * zoom}px ${cellSize * zoom}px`,
               }}
             />
           )}
@@ -157,7 +171,7 @@ export function PreviewPanel({ generatedCode, zoom, onZoomChange }: Props) {
             style={{
               width: displayWidth,
               height: displayHeight,
-              imageRendering: isPixel || effectiveZoom >= 2 ? 'pixelated' : 'auto',
+              imageRendering: isPixel || zoom >= 2 ? 'pixelated' : 'auto',
             }}
           />
         </div>

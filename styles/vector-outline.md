@@ -24,6 +24,10 @@ Desenho apenas com contorno (line art), sem preenchimento e com fundo transparen
 - Multiplas cores sem motivo.
 - Espessura fina demais (1 px) para a resolucao final.
 
+## Verificação
+
+Antes de entregar: `npm run render -- <pasta>` → **ler o preview.png** → `npm run doctor -- <asset.ts>`.
+
 ## Exemplo
 
 ```typescript

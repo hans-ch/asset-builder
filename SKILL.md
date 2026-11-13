@@ -185,11 +185,15 @@ uma referência — ou se existir um PNG em `reference/` com o nome do pedido �
 1. **Extraia o esqueleto** (comando, não à mão):
 
    ```bash
-   npm run skeleton -- reference/<arquivo>.png --pose front --name <nome> --style pixel-pokemon-gba
+   npm run skeleton -- reference/<arquivo>.png --pose front --name <nome> --style pixel-pokemon-gba --max-colors 16
    ```
 
    Gera `styles/skeletons/<nome>.md` (com o mapa ASCII pronto, a paleta e a geometria) e
    `styles/skeletons/<nome>-guia.png` (a referência com grid 0–100, para ler coordenadas).
+
+   O comando remove o fundo sólido, descarta texto e pose extras, posteriza as cores e detecta a
+   grade da arte automaticamente. Se o resultado não ficar bom, ajuste `--cell`, `--max-cols` ou
+   `--max-colors`.
 
 2. **Leia o `.md` gerado.** Ele tem duas seções:
    - `## Pixel` → o mapa ASCII e a paleta (use como base para o `drawPixelMap`);
@@ -203,10 +207,13 @@ uma referência — ou se existir um PNG em `reference/` com o nome do pedido �
 
 ### Exemplos de esqueleto prontos
 
-| Arquivo | Uso |
-|---|---|
-| `styles/skeletons/ref-front.md` | personagem de frente (14×19) |
-| `styles/skeletons/ref-profile.md` | personagem de perfil (14×19) |
+| Arquivo | Grade | Assunto |
+|---|---|---|
+| `styles/skeletons/slime-chibi.md` | 32×28 | slime |
+| `styles/skeletons/caveira-chibi.md` | 30×47 | caveira com coroa |
+| `styles/skeletons/diabrete-chibi.md` | 33×24 | diabrete |
+| `styles/skeletons/espadachim-chibi.md` | 33×33 | espadachim |
+| `styles/skeletons/fantasma-chibi.md` | 25×31 | fantasma |
 
 ### Referência em vetorial
 

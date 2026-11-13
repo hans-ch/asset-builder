@@ -32,11 +32,15 @@ async function generateOne(
     trim: boolean;
     outDir: string;
     guide: boolean;
+    maxColors?: number;
+    maxCols?: number;
   }
 ): Promise<void> {
   const grid: ExtractedGrid = await extractGrid(pngPath, {
     cell: options.cell,
     trim: options.trim,
+    maxColors: options.maxColors,
+    maxCols: options.maxCols,
   });
 
   const style = options.styleId ? getStyle(options.styleId) : undefined;
@@ -58,6 +62,14 @@ async function generateOne(
   });
 
   mkdirSync(options.outDir, { recursive: true });
+
+  if (process.env.SKELETON_DEBUG) {
+    console.log(
+      `  componentes (celulas): ${grid.componentAreas.slice(0, 12).join(', ')}${
+        grid.componentAreas.length > 12 ? ' ...' : ''
+      }`
+    );
+  }
 
   const docPath = path.join(options.outDir, `${options.name}.md`);
   writeFileSync(docPath, doc, 'utf-8');
@@ -93,9 +105,21 @@ async function main() {
   const cell = flagNumber(flags, 'cell');
   const trim = !flagBoolean(flags, 'no-trim');
   const guide = !flagBoolean(flags, 'no-guide');
+  const maxColors = flagNumber(flags, 'max-colors');
+  const maxCols = flagNumber(flags, 'max-cols');
   const outDir = path.resolve(flagString(flags, 'out-dir', path.join(ROOT, 'styles', 'skeletons')));
 
-  await generateOne(pngPath, { pose, name, styleId: styleId || undefined, cell, trim, outDir, guide });
+  await generateOne(pngPath, {
+    pose,
+    name,
+    styleId: styleId || undefined,
+    cell,
+    trim,
+    outDir,
+    guide,
+    maxColors,
+    maxCols,
+  });
 }
 
 main().catch((error) => {

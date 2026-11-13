@@ -16,12 +16,28 @@ npm run skeleton -- reference/character-front.png --pose front --name ref-front 
 npm run pixelize -- reference/character-front.png --style pixel-pokemon-gba --out asset_gen/meu_grupo/personagem.ts
 ```
 
+### Opções úteis
+
+| Flag | Efeito |
+|---|---|
+| `--max-colors <n>` | Limita as cores do esqueleto (median cut). Padrão: 24. Use 12–16 para pixel art. |
+| `--max-cols <n>` | Limita a largura da grade (aumenta a célula). Padrão: 48. |
+| `--cell <n>` | Força o tamanho da célula em px (ignora a detecção). |
+| `--no-trim` | Não recorta a moldura vazia. |
+
 ## Disponíveis
 
-| Arquivo | Pose | Grade | Origem |
-|---|---|---|---|
-| `ref-front.md` | frente | 14×19 | `reference/character-front.png` |
-| `ref-profile.md` | perfil | 14×19 | `reference/character-left.png` |
+| Arquivo | Grade | Origem |
+|---|---|---|
+| `slime-chibi.md` | 32×28 | `reference/slime_chibi_sprite.png` |
+| `caveira-chibi.md` | 30×47 | `reference/caveira_chibi_sprite.png` |
+| `diabrete-chibi.md` | 33×24 | `reference/diabrete_chibi_sprite.png` |
+| `espadachim-chibi.md` | 33×33 | `reference/espadachim_chibi_sprite.png` |
+| `fantasma-chibi.md` | 25×31 | `reference/fantasma_chibi_sprite.png` |
+
+> As referências são folhas geradas por IA (1024×1024, fundo sólido, texto e pose extras).
+> O extrator remove o fundo por *flood fill* a partir da borda, descarta componentes
+> pequenos (texto/pose extras), posteriza as cores e detecta a grade da arte.
 
 ## Regras de uso
 

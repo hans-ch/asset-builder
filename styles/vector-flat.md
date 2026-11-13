@@ -24,6 +24,11 @@ Estilo padrao do Asset Builder (comportamento atual do motor).
 - Detalhe minimo (1 px de espessura) que some na resolucao final.
 - Fundo com gradiente escondido por tras do asset.
 
+## Verificação
+
+Antes de entregar: `npm run render -- <pasta>` → **ler o preview.png** → `npm run doctor -- <asset.ts>`.
+O doctor aponta cor fora da paleta, contorno ausente e silhueta irregular.
+
 ## Exemplo
 
 ```typescript

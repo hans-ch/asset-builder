@@ -46,6 +46,7 @@ asset-builder/
 │   │   ├── AssetExplorer.tsx          # Explorer de pastas/scripts
 │   │   ├── EditorPanel.tsx            # Monaco Editor + salvar
 │   │   ├── PreviewPanel.tsx           # Canvas + zoom + export PNG
+│   │   ├── Resizer.tsx                # Alça de redimensionamento entre colunas
 │   │   └── ErrorConsole.tsx           # Exibe erros
 │   ├── engine/
 │   │   ├── types.ts                   # Interface VectorContext
@@ -311,17 +312,29 @@ Trava a paleta do asset (sobrescreve a do preset). No `finalize()`, os presets c
 
 ### 7.1 App.tsx
 
-Layout de 3 colunas:
+Layout de 3 colunas, **redimensionáveis**:
 
-1. **Explorer** (`AssetExplorer`) — largura fixa em desktop.
-2. **Editor** (`EditorPanel`) — Monaco Editor.
-3. **Preview** (`PreviewPanel`) — Canvas.
+1. **Explorer** (`AssetExplorer`) — largura padrão 256 px (180–520).
+2. **Editor** (`EditorPanel`) — Monaco Editor, largura padrão 42% da janela (280–1400).
+3. **Preview** (`PreviewPanel`) — Canvas, ocupa o espaço restante (`flex-1 min-w-0`).
+
+Entre as colunas há o componente `Resizer` (`src/components/Resizer.tsx`): uma alça de 4 px que
+arrasta com o mouse (eventos no `window`, então o cursor pode sair da área) e aceita as setas do
+teclado (`←`/`→`, com `Shift` para passos maiores). As larguras são persistidas em `localStorage`
+(`asset-builder:explorer-width`, `asset-builder:editor-width`). Abaixo de `lg` o layout empilha e as
+alças ficam ocultas.
 
 Estados principais:
 - `selectedPath`: caminho relativo do arquivo selecionado (`grupo/arquivo.ts`).
 - `code`: conteúdo atual do editor.
 - `originalCode`: conteúdo salvo no disco (para detectar modificações).
-- `zoom`: fator de zoom do preview.
+- `zoom`: fator de zoom do preview (inicia em **1x** e volta a 1x a cada script escolhido).
+- `explorerWidth` / `editorWidth`: larguras dos painéis.
+
+O **estilo é derivado do código** (`detectStyle(code)`) e define a faixa de zoom:
+pixel art → 1×–16× (inteira), vetorial → 0,25×–5×. O zoom efetivo é o estado limitado à faixa
+(`effectiveZoom`), então o slider nunca fica com valor inválido — não existe effect escrevendo
+estado, apenas o valor derivado.
 
 ### 7.2 AssetExplorer
 
@@ -329,6 +342,7 @@ Estados principais:
 - Renderiza pastas expansíveis.
 - Cada `.ts` é clicável e dispara `onSelect(folder, file)`.
 - Botão de atualizar (↻) para recarregar a árvore.
+- Pastas com prefixo `_` (ex.: `_archive`) não são listadas.
 
 ### 7.3 EditorPanel
 
@@ -341,7 +355,10 @@ Estados principais:
 
 - Usa o hook `useVectorRenderer` para compilar e executar o código.
 - Canvas tem a resolução real definida pelo script.
-- Zoom via slider de `0.25x` a `5x`.
+- **Zoom via slider sempre visível**: a faixa vem do `App` (`zoomRange`), 1×–16× em pixel art e
+  0,25×–5× em vetorial. Em pixel art há atalhos (1× 2× 4× 8× 16×) na barra do estilo.
+- O `imageRendering` é `pixelated` em estilos pixel (em qualquer zoom) e a partir de 2× em vetorial.
+- Badge do estilo, paleta (clique copia o hex) e overlay de grade (1 linha por célula) em pixel art.
 - Exportação PNG com o tamanho real do canvas.
 
 ### 7.5 useVectorRenderer
@@ -352,9 +369,10 @@ Responsabilidades:
 2. Compila o TypeScript com Sucrase.
 3. Substitui `export function generateAsset` por `return function`.
 4. Executa via `new Function(...)`.
-5. Instancia `VectorEngine` e chama `generateAsset`.
+5. Instancia `VectorEngine` e roda o script com `runAsset()` (executa + `finalize()`).
 6. Lê o tamanho final do canvas e expõe para o PreviewPanel.
 7. Captura erros de compilação/execução e exibe no preview.
+8. Detecta o estilo do script (`detectStyle`) — usado pelo `App` para definir a faixa de zoom.
 
 ---
 
@@ -594,7 +612,7 @@ apenas no Node (`scripts/lib/`), usando `@napi-rs/canvas`.
 ### 15.2 `npm run skeleton` — imagem → esqueleto `.md`
 
 ```bash
-npm run skeleton -- reference/character-front.png --pose front --name ref-front --style pixel-pokemon-gba
+npm run skeleton -- reference/slime_chibi_sprite.png --pose front --name slime-chibi --style pixel-pokemon-gba --max-colors 16
 ```
 
 Gera dois arquivos em `styles/skeletons/`:
@@ -604,12 +622,24 @@ Gera dois arquivos em `styles/skeletons/`:
 | `<nome>.md` | Mapa ASCII + tabela de papéis (char → papel → hex) + geometria relativa (regiões em %) + regras |
 | `<nome>-guia.png` | A referência ampliada com o grid 0–100 e os bboxes das regiões (para leitura vetorial) |
 
-**Detecção da grade** (`detectCellSize`): o maior `c` para o qual as fronteiras de cor caem em
-múltiplos de `c` **e** todos os blocos não transparentes são monocromáticos. Funciona para sprite
-nativo (56×56 → `c = 1`) e para upscale (448×448 de uma grade 56×56 → `c = 8`).
+**Detecção da grade** (`detectCellSize`): duas estratégias combinadas por score
+(`monoRatio × edgeAlignment`), escolhendo a melhor:
+1. **GCD dos runs de cor** — robusto para pixel art gerado por IA (que tem antialias e bordas suaves);
+2. **alinhamento das fronteiras** — para sprite nativo ou upscale perfeito.
+
+Funciona para sprite nativo (56×56 → `c = 1`) e para upscale (448×448 de uma grade 56×56 → `c = 8`).
 `--cell <n>` sobrescreve.
 
-**Recorte**: por padrão o esqueleto é o *bbox* do sprite (ex.: 14×19), não a grade cheia — menos
+**Tratamento de imagens de IA** (folhas 1024×1024 com fundo sólido, texto e pose extras):
+
+| Passo | O que faz |
+|---|---|
+| `removeBackground` | *Flood fill* a partir da borda com tolerância: remove o fundo (e a sombra suave) sem tocar no personagem isolado no centro |
+| `keepMainComponents` | Descarta componentes menores que 45% do maior (texto, pose extras, bolhas soltas) |
+| `posterize` | Median cut: reduz as cores distintas ao limite (`--max-colors`, padrão 24) — limpa o antialias |
+| `--max-cols` | Limita a largura da grade (padrão 48), ajustando a célula |
+
+**Recorte**: por padrão o esqueleto é o *bbox* do sprite (ex.: 32×28), não a grade cheia — menos
 token e só a forma interessa. A posição na grade original fica no frontmatter.
 
 ### 15.3 `npm run pixelize` — referência → asset editável

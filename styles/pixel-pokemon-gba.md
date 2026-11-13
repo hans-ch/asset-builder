@@ -30,18 +30,23 @@ Cinza             #909090  #585858
 
 ## Regras
 
-1. **Grade, não pixels soltos.** A silhueta ocupa ~44 x 44 células centralizadas. Nada de meia
-   grade: todo pixel cai em uma célula inteira.
-2. **Contorno escuro de 1 px** em toda a silhueta (`ctx.outlinePixels('#181018')`). O contorno é
+1. **Grade, não pixels soltos.** A silhueta ocupa ~32 x 32 células centralizadas (sprite de 24–32
+   células lê melhor do que um sprite de 56). Nada de meia grade: todo pixel cai em uma célula inteira.
+2. **Mapa retangular.** `drawPixelMap` lança erro se as linhas tiverem larguras diferentes — corrija
+   o mapa (o erro lista as linhas e a largura esperada).
+3. **Contorno escuro de 1 px** em toda a silhueta (`ctx.outlinePixels('#181018')`). O contorno é
    desenhado **depois** do corpo, nunca antes.
-3. **3 tons por material**: base, luz (topo-esquerda) e sombra (base-direita). A luz vem sempre
+4. **Separação entre regiões**: `ctx.separatePixels('#181018')` desenha a linha escura entre cores
+   diferentes (ex.: o branco do olho sobre o vermelho do capacete). Chame depois do corpo e antes do
+   `outlinePixels`.
+5. **3 tons por material**: base, luz (topo-esquerda) e sombra (base-direita). A luz vem sempre
    do mesmo lugar em todos os assets do mesmo grupo.
-4. **Olhos de 2 a 3 px** de largura, com 1 px de brilho branco no canto superior.
-5. **Sem gradiente**: só degraus sólidos. Transições suaves só por dithering (`bayer4`) e só em
+6. **Olhos de 2 a 3 px** de largura, com 1 px de brilho branco no canto superior.
+7. **Sem gradiente**: só degraus sólidos. Transições suaves só por dithering (`bayer4`) e só em
    áreas grandes (céu, chão), nunca no personagem.
-6. **Anatomia primeiro**: orelhas, cauda, membros e snout são lidos pela silhueta. Detalhe interno
+8. **Anatomia primeiro**: orelhas, cauda, membros e snout são lidos pela silhueta. Detalhe interno
    só depois que a silhueta estiver boa.
-7. **Simetria**: desenhe a metade esquerda e use `ctx.mirrorPixels('x')` para espelhar.
+9. **Simetria**: desenhe a metade esquerda e use `ctx.mirrorPixels('x')` para espelhar.
 
 ## Anti-padrões
 
