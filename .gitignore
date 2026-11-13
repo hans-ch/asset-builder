@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 asset_gen/*
+reference/*
+styles/skeletons/*
